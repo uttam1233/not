@@ -1,70 +1,40 @@
-name: Build iOS IPA (no codesign)
+name: ipad_notes_offline
+description: Offline-first iPad notes app (Apple Notes / OneNote-like) built with Flutter.
+publish_to: "none"
 
-on:
-  workflow_dispatch:
+version: 1.0.0+1
 
-jobs:
-  ios:
-    runs-on: macos-latest
+environment:
+  sdk: ">=3.11.0 <4.0.0"
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+dependencies:
+  flutter:
+    sdk: flutter
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+  flutter_localizations:
+    sdk: flutter
 
-      - name: Flutter version
-        run: flutter --version
+  # Rich text editor (WYSIWYG)
+  flutter_quill: ^11.5.0
 
-      - name: Get packages
-        run: flutter pub get
+  # Local database
+  isar_community: ^3.3.0
+  isar_community_flutter_libs: ^3.3.0
+  path_provider: ^2.1.3
 
-      - name: Generate code (Isar)
-        run: dart run build_runner build --delete-conflicting-outputs
+  # State management
+  provider: ^6.1.2
 
-      - name: Ensure iOS platform files exist
-        run: flutter create . --platforms=ios
+  # MUST be compatible with flutter_localizations (pinned by Flutter SDK)
+  intl: ^0.20.2
 
-      - name: Set minimum iOS version to 13.0
-        run: |
-          python3 - <<'PY'
-          import pathlib, re
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
 
-          podfile = pathlib.Path("ios/Podfile")
-          if podfile.exists():
-              text = podfile.read_text(encoding="utf-8")
-              if re.search(r"^platform :ios, '.*'$", text, flags=re.M):
-                  text = re.sub(r"^platform :ios, '.*'$", "platform :ios, '13.0'", text, flags=re.M)
-              else:
-                  text = "platform :ios, '13.0'\\n" + text
-              podfile.write_text(text, encoding="utf-8")
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.9
+  isar_community_generator: ^3.3.0
 
-          plist = pathlib.Path("ios/Flutter/AppFrameworkInfo.plist")
-          if plist.exists():
-              t = plist.read_text(encoding="utf-8")
-              if "<key>MinimumOSVersion</key>" in t:
-                  t = re.sub(
-                      r"<key>MinimumOSVersion</key>\\s*<string>[^<]*</string>",
-                      "<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>",
-                      t
-                  )
-              else:
-                  t = t.replace(
-                      "</dict>",
-                      "\\t<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>\\n</dict>"
-                  )
-              plist.write_text(t, encoding="utf-8")
-          PY
-
-      - name: Build IPA (release, no codesign)
-        run: flutter build ipa --release --no-codesign
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: build/ios/ipa/*.ipa
+flutter:
+  uses-material-design: true
