@@ -40,7 +40,7 @@ jobs:
               if re.search(r"^platform :ios, '.*'$", text, flags=re.M):
                   text = re.sub(r"^platform :ios, '.*'$", "platform :ios, '13.0'", text, flags=re.M)
               else:
-                  text = "platform :ios, '13.0'\\n" + text
+                  text = "platform :ios, '13.0'\n" + text
               podfile.write_text(text, encoding="utf-8")
 
           plist = pathlib.Path("ios/Flutter/AppFrameworkInfo.plist")
@@ -48,14 +48,14 @@ jobs:
               t = plist.read_text(encoding="utf-8")
               if "<key>MinimumOSVersion</key>" in t:
                   t = re.sub(
-                      r"<key>MinimumOSVersion</key>\\s*<string>[^<]*</string>",
-                      "<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>",
+                      r"<key>MinimumOSVersion</key>\s*<string>[^<]*</string>",
+                      "<key>MinimumOSVersion</key>\n\t<string>13.0</string>",
                       t
                   )
               else:
                   t = t.replace(
                       "</dict>",
-                      "\\t<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>\\n</dict>"
+                      "\t<key>MinimumOSVersion</key>\n\t<string>13.0</string>\n</dict>"
                   )
               plist.write_text(t, encoding="utf-8")
           PY
