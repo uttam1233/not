@@ -1,0 +1,28 @@
+# Misc
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+
+# IntelliJ / Android Studio / VSCode
+.idea/
+.vscode/
+*.iml
+
+# Flutter / Dart
+.pub/
+.dart_tool/
+build/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+
+# Android
+android/.gradle/
+android/local.properties
+
+# Generated
+**/*.g.dart

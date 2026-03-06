@@ -1,0 +1,70 @@
+name: Build iOS IPA (no codesign)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Generate code (Isar)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Ensure iOS platform files exist
+        run: flutter create . --platforms=ios
+
+      - name: Set minimum iOS version to 13.0
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+
+          podfile = pathlib.Path("ios/Podfile")
+          if podfile.exists():
+              text = podfile.read_text(encoding="utf-8")
+              if re.search(r"^platform :ios, '.*'$", text, flags=re.M):
+                  text = re.sub(r"^platform :ios, '.*'$", "platform :ios, '13.0'", text, flags=re.M)
+              else:
+                  text = "platform :ios, '13.0'\\n" + text
+              podfile.write_text(text, encoding="utf-8")
+
+          plist = pathlib.Path("ios/Flutter/AppFrameworkInfo.plist")
+          if plist.exists():
+              t = plist.read_text(encoding="utf-8")
+              if "<key>MinimumOSVersion</key>" in t:
+                  t = re.sub(
+                      r"<key>MinimumOSVersion</key>\\s*<string>[^<]*</string>",
+                      "<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>",
+                      t
+                  )
+              else:
+                  t = t.replace(
+                      "</dict>",
+                      "\\t<key>MinimumOSVersion</key>\\n\\t<string>13.0</string>\\n</dict>"
+                  )
+              plist.write_text(t, encoding="utf-8")
+          PY
+
+      - name: Build IPA (release, no codesign)
+        run: flutter build ipa --release --no-codesign
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: build/ios/ipa/*.ipa
